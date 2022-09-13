@@ -38,7 +38,6 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправка сообщения в Телеграм о статусе проверки дом.задания."""
-
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         main_logger.info(f'Отправка сообщения в Телеграм чат с ID '
@@ -50,7 +49,6 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Получение json по запросу из API сервиса Практикум.Домашка."""
-
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     headers = {'Authorization': 'OAuth ' + PRACTICUM_TOKEN}
@@ -73,8 +71,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """Проверка ответа сервиса на корректность типов"""
-
+    """Проверка ответа сервиса на корректность типов."""
     try:
         response_keys = {'homeworks': list, 'current_date': int}
         if not isinstance(response, dict):
@@ -101,7 +98,6 @@ def check_response(response):
 
 def parse_status(homework):
     """Парсинг сообщения о статусе проверки домашней работы."""
-
     try:
         parse_keys = ('status', 'homework_name')
         for parse_key in parse_keys:
@@ -122,14 +118,16 @@ def parse_status(homework):
         raise error
     else:
         main_logger.debug('Парсинг прошёл успешно.')
-        message = f'Изменился статус проверки работы "{homework_name}". {verdict}'
+        message = (
+            f'Изменился статус проверки работы "{homework_name}". '
+            f'{verdict}'
+        )
         main_logger.info(message)
         return message
 
 
 def check_tokens():
     """Функция проверки наличия обязательных переменных."""
-
     tokens = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
@@ -147,7 +145,6 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-
     if not check_tokens():
         exit()
 
