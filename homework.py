@@ -153,12 +153,12 @@ def main():
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
+    old_msg_error = ''
 
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-            main_logger.info(f'homework: {homeworks}')
             if not homeworks:
                 main_logger.debug('Статус домашних работ не изменился.')
             else:
@@ -166,9 +166,11 @@ def main():
                     status_message = parse_status(homework)
                     send_message(bot, status_message)
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            main_logger.error(message)
-            send_message(bot, message)
+            msg_error = f'Сбой в работе программы: {error}'
+            main_logger.error(msg_error)
+            if msg_error != old_msg_error:
+                send_message(bot, msg_error)
+                old_msg_error = msg_error
         else:
             current_timestamp = response.get('current_date')
         finally:
