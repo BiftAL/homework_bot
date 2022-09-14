@@ -29,7 +29,7 @@ RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-HOMEWORK_STATUSES = {
+HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
@@ -55,75 +55,65 @@ def get_api_answer(current_timestamp):
 
     try:
         response = requests.get(ENDPOINT, headers=headers, params=params)
-        if response.status_code != HTTPStatus.OK:
-            raise BadStatusResponse(
-                f'Эндпоинт {ENDPOINT} недоступен. '
-                f'Код ответа сервера: {response.status_code}'
-            )
-    except BadStatusResponse as error:
-        raise error
-    else:
-        main_logger.debug(
-            'Получен ответ от API сервиса Практикум.Домашка. '
-            f'Код ответа сервера: {response.status_code}'
-        )
-        return response.json()
+    except Exception as error:
+        main_logger.error(f'Ошибка response: {error}')
+    if response.status_code != HTTPStatus.OK:
+        e_msg = f'Некорректный ответ сервера, код {response.status_code}'
+        main_logger.error(f'{e_msg}. URL запроса {response.request.url}')
+        raise BadStatusResponse(e_msg)
+    main_logger.debug('Получен ответ от API сервиса Практикум.Домашка.')
+    return response.json()
+
+
+def check_type_required_fields(dict_types, check_dict):
+    """Проверка соответствия типов и наличия обязательных ключей"""
+    if not isinstance(check_dict, dict):
+        raise TypeError('тип значения не является dict')
+    for key, val in dict_types.items():
+        if key not in check_dict:
+            raise KeyError(f'отсутствует обязательный ключ {key}')
+        if not isinstance(check_dict[key], val):
+            raise TypeError(f'тип значения {key} не '
+                            f'является {val.__name__}')
 
 
 def check_response(response):
     """Проверка ответа сервиса на корректность типов."""
+    response_types = {'homeworks': list, 'current_date': int}
     try:
-        response_keys = {'homeworks': list, 'current_date': int}
-        if not isinstance(response, dict):
-            raise TypeError('Тип значения response не является dict')
-        else:
-            for key, val in response_keys.items():
-                if key not in response:
-                    raise KeyError(
-                        f'Отсутствуют обязательный ключ {key} '
-                        'в ответе API сервиса Практикум.Домашка'
-                    )
-                if not isinstance(response[key], val):
-                    raise TypeError(
-                        f'Тип значения {key} не является {val.__name__}'
-                    )
+        check_type_required_fields(response_types, response)
     except KeyError as error:
-        raise error
+        raise KeyError(f'В функции {check_response.__name__} {error}')
     except TypeError as error:
-        raise error
-    else:
-        main_logger.debug('Проверка response прошла успешно.')
-        return response.get('homeworks')
+        raise TypeError(f'В функции {check_response.__name__} {error}')
+    main_logger.debug('Проверка response прошла успешно.')
+    return response.get('homeworks')
 
 
 def parse_status(homework):
     """Парсинг сообщения о статусе проверки домашней работы."""
+    parse_types = {'status': str, 'homework_name': str}
     try:
-        parse_keys = ('status', 'homework_name')
-        for parse_key in parse_keys:
-            if parse_key not in homework:
-                raise KeyError(
-                    f'При парсинге домашней работы не '
-                    f'обнаружен ключ "{parse_key}"'
-                )
-        homework_status = homework['status']
-        homework_name = homework['homework_name']
-        if homework_status not in HOMEWORK_STATUSES:
-            raise KeyError(
-                'Недокументированный статус домашней '
-                f'работы "{homework_status}"'
-            )
-        verdict = HOMEWORK_STATUSES[homework_status]
+        check_type_required_fields(parse_types, homework)
     except KeyError as error:
-        raise error
-    else:
-        main_logger.debug('Парсинг прошёл успешно.')
-        message = (
-            f'Изменился статус проверки работы "{homework_name}". '
-            f'{verdict}'
+        raise KeyError(f'В функции {parse_status.__name__} {error}')
+    except TypeError as error:
+        raise TypeError(f'В функции {parse_status.__name__} {error}')
+    homework_status = homework['status']
+    homework_name = homework['homework_name']
+    if homework_status not in HOMEWORK_VERDICTS:
+        raise KeyError(
+            'Недокументированный статус домашней '
+            f'работы "{homework_status}"'
         )
-        main_logger.info(message)
-        return message
+    verdict = HOMEWORK_VERDICTS[homework_status]
+    main_logger.debug('Парсинг прошёл успешно.')
+    message = (
+        f'Изменился статус проверки работы "{homework_name}". '
+        f'{verdict}'
+    )
+    main_logger.info(message)
+    return message
 
 
 def check_tokens():
