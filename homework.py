@@ -66,7 +66,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_type_required_fields(dict_types, check_dict):
-    """Проверка соответствия типов и наличия обязательных ключей"""
+    """Проверка соответствия типов и наличия обязательных ключей."""
     if not isinstance(check_dict, dict):
         raise TypeError('тип значения не является dict')
     for key, val in dict_types.items():
