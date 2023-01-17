@@ -31,7 +31,6 @@ source venv/bin/activate
 ```
 Переименовать и отредактировать в корне проекта файл env.example в .env
 
-python -m pip install --upgrade pip
 
 Обновить менеджер пакетов
 ```
