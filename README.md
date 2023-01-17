@@ -30,7 +30,10 @@ source venv/Scripts/activate
 source venv/bin/activate
 ```
 Переименовать и отредактировать в корне проекта файл env.example в .env
-
+```
+mv env.example .env
+nano .env
+```
 
 Обновить менеджер пакетов
 ```
